@@ -62,3 +62,8 @@ impl Contract {
 }
 
 mod test;
+mod address_manager;
+mod registration;
+mod smt_root;
+mod types;
+mod contract_core;

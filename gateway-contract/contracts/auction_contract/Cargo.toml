@@ -1,5 +1,5 @@
 [package]
-name = "alien-gateway"
+name = "auction_contract"
 version = "0.0.0"
 edition = "2021"
 publish = false

@@ -33,3 +33,4 @@ impl SmtRoot {
         env.storage().instance().get(&DataKey::SmtRoot)
     }
 }
+                                                                      
