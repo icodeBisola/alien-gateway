@@ -13,8 +13,6 @@ pub enum DataKey {
     Resolver(BytesN<32>),
 }
 
-
-
 #[contracttype]
 #[derive(Clone)]
 pub struct ResolveData {
@@ -22,15 +20,11 @@ pub struct ResolveData {
     pub memo: Option<u64>,
 }
 
-
-
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum ResolverError {
     NotFound = 1,
 }
-
-
 
 #[contractimpl]
 impl Contract {
@@ -51,9 +45,9 @@ impl Contract {
     }
 }
 
-mod test;
 mod address_manager;
+mod contract_core;
 mod registration;
 mod smt_root;
+mod test;
 mod types;
-mod contract_core;
