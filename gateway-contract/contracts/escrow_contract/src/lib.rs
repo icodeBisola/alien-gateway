@@ -103,6 +103,44 @@ impl EscrowContract {
         Events::vault_crt(&env, commitment, token, owner);
     }
 
+    /// Deposits tokens into an existing vault and increases its internal balance.
+    ///
+    /// The vault owner must authorize this call. Tokens are transferred from the
+    /// owner to this contract before the vault balance is updated.
+    ///
+    /// ### Errors
+    /// - `InvalidAmount`: If `amount <= 0`.
+    /// - `VaultNotFound`: If the vault does not exist.
+    /// - `VaultInactive`: If the vault is cancelled/inactive.
+    pub fn deposit(env: Env, commitment: BytesN<32>, amount: i128) {
+        if amount <= 0 {
+            panic_with_error!(&env, EscrowError::InvalidAmount);
+        }
+
+        let config = read_vault_config(&env, &commitment)
+            .unwrap_or_else(|| panic_with_error!(&env, EscrowError::VaultNotFound));
+        let mut state = read_vault_state(&env, &commitment)
+            .unwrap_or_else(|| panic_with_error!(&env, EscrowError::VaultNotFound));
+
+        config.owner.require_auth();
+
+        if !state.is_active {
+            panic_with_error!(&env, EscrowError::VaultInactive);
+        }
+
+        token::Client::new(&env, &config.token).transfer(
+            &config.owner,
+            env.current_contract_address(),
+            &amount,
+        );
+
+        state.balance = state
+            .balance
+            .checked_add(amount)
+            .expect("vault balance overflow");
+        write_vault_state(&env, &commitment, &state);
+    }
+
     /// Schedules a payment from one vault to another.
     ///
     /// Funds are reserved in the source vault immediately upon scheduling.
