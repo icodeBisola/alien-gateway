@@ -157,3 +157,100 @@ fn test_schedule_payment_returns_incrementing_ids() {
     assert_eq!(id0, 0);
     assert_eq!(id1, 1);
 }
+
+#[test]
+fn test_get_balance_existing_vault() {
+    let env = Env::default();
+    let (contract_id, client, token, from, _) = setup_test(&env);
+
+    let initial_balance = 1000i128;
+    create_vault(
+        &env,
+        &contract_id,
+        &from,
+        &Address::generate(&env),
+        &token,
+        initial_balance,
+    );
+
+    let balance = client.get_balance(&from);
+    assert_eq!(balance, initial_balance);
+}
+
+#[test]
+fn test_get_balance_nonexistent_vault() {
+    let env = Env::default();
+    let (_, client, _, _, _) = setup_test(&env);
+
+    let nonexistent_commitment = BytesN::from_array(&env, &[99u8; 32]);
+    let balance = client.get_balance(&nonexistent_commitment);
+    assert_eq!(balance, 0);
+}
+
+#[test]
+fn test_get_balance_after_deposit() {
+    let env = Env::default();
+    let (contract_id, client, token, from, _) = setup_test(&env);
+
+    // Create vault with initial balance
+    let initial_balance = 500i128;
+    create_vault(
+        &env,
+        &contract_id,
+        &from,
+        &Address::generate(&env),
+        &token,
+        initial_balance,
+    );
+
+    // Verify initial balance
+    let balance = client.get_balance(&from);
+    assert_eq!(balance, initial_balance);
+
+    // Simulate deposit by updating vault balance directly
+    let deposit_amount = 300i128;
+    let new_balance = initial_balance + deposit_amount;
+    env.as_contract(&contract_id, || {
+        let mut vault: VaultState = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Vault(from.clone()))
+            .unwrap();
+        vault.balance = new_balance;
+        env.storage()
+            .persistent()
+            .set(&DataKey::Vault(from.clone()), &vault);
+    });
+
+    // Verify updated balance
+    let updated_balance = client.get_balance(&from);
+    assert_eq!(updated_balance, new_balance);
+}
+
+#[test]
+fn test_get_balance_after_withdraw() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (contract_id, client, token, from, to) = setup_test(&env);
+
+    let initial_balance = 1000i128;
+    let withdraw_amount = 400i128;
+    let release_at = 2000u64;
+
+    create_vault(
+        &env,
+        &contract_id,
+        &from,
+        &Address::generate(&env),
+        &token,
+        initial_balance,
+    );
+    env.ledger().set_timestamp(1000);
+
+    // Schedule payment (which reserves funds)
+    client.schedule_payment(&from, &to, &withdraw_amount, &release_at);
+
+    // Verify balance decreased after scheduling payment
+    let balance = client.get_balance(&from);
+    assert_eq!(balance, initial_balance - withdraw_amount);
+}

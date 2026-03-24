@@ -100,4 +100,22 @@ impl EscrowContract {
 
         Ok(payment_id)
     }
+
+    /// Returns the current token balance of a vault.
+    ///
+    /// This is a read-only function that can be called without authentication.
+    /// Used by the SDK and frontend dashboard to display vault state.
+    ///
+    /// ### Arguments
+    /// - `commitment`: The BytesN<32> commitment ID of the vault.
+    ///
+    /// ### Returns
+    /// - `i128`: The current balance of the vault. Returns 0 if vault does not exist.
+    pub fn get_balance(env: Env, commitment: BytesN<32>) -> i128 {
+        // Try to read the vault state
+        match read_vault(&env, &commitment) {
+            Some(vault) => vault.balance,
+            None => 0, // Return 0 for non-existent vault (no panic for safe polling)
+        }
+    }
 }
