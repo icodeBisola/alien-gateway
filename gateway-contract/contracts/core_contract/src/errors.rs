@@ -14,6 +14,8 @@ pub enum CoreError {
     StaleRoot = 4,
     /// The supplied Groth16 proof is invalid.
     InvalidProof = 5,
+    /// The username is registered but has no primary Stellar address linked.
+    NoAddressLinked = 6,
 }
 
 #[contracterror]

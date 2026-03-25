@@ -73,6 +73,51 @@ fn test_set_memo_and_resolve_flow() {
     assert_eq!(memo, Some(4242u64));
 }
 
+// ── resolve_stellar tests ─────────────────────────────────────────────────────
+
+#[test]
+fn test_resolve_stellar_returns_linked_address() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (_, client) = setup(&env);
+
+    let owner = Address::generate(&env);
+    let hash = commitment(&env, 10);
+
+    client.register(&owner, &hash);
+    client.add_stellar_address(&owner, &hash, &owner);
+
+    let resolved = client.resolve_stellar(&hash);
+    assert_eq!(resolved, owner);
+}
+
+#[test]
+fn test_resolve_stellar_linked_address_differs_from_owner() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (_, client) = setup(&env);
+
+    let owner = Address::generate(&env);
+    let payment_address = Address::generate(&env);
+    let hash = commitment(&env, 11);
+
+    client.register(&owner, &hash);
+    client.add_stellar_address(&owner, &hash, &payment_address);
+
+    let resolved = client.resolve_stellar(&hash);
+    assert_eq!(resolved, payment_address);
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #1)")]
+fn test_resolve_stellar_not_found_for_unregistered_hash() {
+    let env = Env::default();
+    let (_, client) = setup(&env);
+
+    let hash = commitment(&env, 12);
+    client.resolve_stellar(&hash);
+}
+
 // ── register_resolver gate tests ──────────────────────────────────────────────
 
 #[test]
@@ -82,7 +127,7 @@ fn test_register_resolver_unauthenticated_fails() {
     // Intentionally no mock_all_auths — caller does not provide auth
     let (_, client, root) = setup_with_root(&env);
     let caller = Address::generate(&env);
-    let hash = commitment(&env, 10);
+    let hash = commitment(&env, 20);
     let signals = PublicSignals {
         old_root: root,
         new_root: BytesN::from_array(&env, &[2u8; 32]),
@@ -97,7 +142,7 @@ fn test_register_resolver_stale_root_fails() {
     env.mock_all_auths();
     let (_, client, _) = setup_with_root(&env);
     let caller = Address::generate(&env);
-    let hash = commitment(&env, 11);
+    let hash = commitment(&env, 21);
     // old_root is deliberately wrong ([99u8; 32] ≠ [1u8; 32])
     let signals = PublicSignals {
         old_root: BytesN::from_array(&env, &[99u8; 32]),
@@ -107,13 +152,56 @@ fn test_register_resolver_stale_root_fails() {
 }
 
 #[test]
+#[should_panic(expected = "Error(Contract, #6)")]
+fn test_resolve_stellar_no_address_linked_when_not_set() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (_, client) = setup(&env);
+
+    let owner = Address::generate(&env);
+    let hash = commitment(&env, 13);
+
+    client.register(&owner, &hash);
+    // do NOT call add_stellar_address
+    client.resolve_stellar(&hash);
+}
+
+#[test]
+#[should_panic]
+fn test_add_stellar_address_wrong_owner_panics() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (_, client) = setup(&env);
+
+    let owner = Address::generate(&env);
+    let attacker = Address::generate(&env);
+    let hash = commitment(&env, 14);
+
+    client.register(&owner, &hash);
+    client.add_stellar_address(&attacker, &hash, &attacker);
+}
+
+#[test]
+#[should_panic(expected = "Error(Contract, #1)")]
+fn test_add_stellar_address_not_registered_panics() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (_, client) = setup(&env);
+
+    let caller = Address::generate(&env);
+    let hash = commitment(&env, 15);
+
+    client.add_stellar_address(&caller, &hash, &caller);
+}
+
+#[test]
 #[should_panic(expected = "Error(Contract, #3)")]
 fn test_register_resolver_duplicate_commitment_fails() {
     let env = Env::default();
     env.mock_all_auths();
     let (_, client, root) = setup_with_root(&env);
     let caller = Address::generate(&env);
-    let hash = commitment(&env, 12);
+    let hash = commitment(&env, 22);
     let new_root = BytesN::from_array(&env, &[2u8; 32]);
 
     // First registration succeeds
@@ -137,7 +225,7 @@ fn test_register_resolver_success_updates_root() {
     env.mock_all_auths();
     let (_, client, root) = setup_with_root(&env);
     let caller = Address::generate(&env);
-    let hash = commitment(&env, 13);
+    let hash = commitment(&env, 23);
     let new_root = BytesN::from_array(&env, &[2u8; 32]);
 
     let signals = PublicSignals {
@@ -169,7 +257,7 @@ fn test_register_resolver_emits_events() {
     let (contract_id, _, root) = setup_with_root(&env);
 
     let caller = Address::generate(&env);
-    let hash = commitment(&env, 14);
+    let hash = commitment(&env, 24);
     let new_root = BytesN::from_array(&env, &[2u8; 32]);
     let proof = dummy_proof(&env);
     let signals = PublicSignals {
