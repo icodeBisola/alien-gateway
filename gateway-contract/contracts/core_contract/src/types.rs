@@ -1,4 +1,4 @@
-use soroban_sdk::{contracttype, Address, Symbol};
+use soroban_sdk::{contracttype, Address, BytesN, Symbol};
 
 #[contracttype]
 #[derive(Clone)]
@@ -20,4 +20,14 @@ pub enum ChainType {
     Bitcoin,
     Solana,
     Cosmos,
+}
+
+/// Public signals extracted from a Groth16 non-inclusion proof.
+/// `old_root` must match the current on-chain SMT root.
+/// `new_root` becomes the new SMT root after a successful registration.
+#[contracttype]
+#[derive(Clone)]
+pub struct PublicSignals {
+    pub old_root: BytesN<32>,
+    pub new_root: BytesN<32>,
 }

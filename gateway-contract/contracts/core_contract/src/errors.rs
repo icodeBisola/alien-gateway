@@ -8,8 +8,14 @@ pub enum CoreError {
     NotFound = 1,
     /// The SMT root has not been set yet.
     RootNotSet = 2,
+    /// Commitment is already registered.
+    DuplicateCommitment = 3,
+    /// public_signals.old_root does not match the current on-chain SMT root.
+    StaleRoot = 4,
+    /// The supplied Groth16 proof is invalid.
+    InvalidProof = 5,
     /// The username is registered but has no primary Stellar address linked.
-    NoAddressLinked = 3,
+    NoAddressLinked = 6,
 }
 
 #[contracterror]
