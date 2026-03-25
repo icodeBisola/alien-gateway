@@ -14,8 +14,8 @@ mod test;
 use crate::errors::EscrowError;
 use crate::events::Events;
 use crate::storage::{
-    increment_payment_id, read_vault_config, read_vault_state,
-    write_scheduled_payment, write_vault_state,
+    increment_payment_id, read_vault_config, read_vault_state, write_scheduled_payment,
+    write_vault_state,
 };
 use crate::types::{DataKey, ScheduledPayment};
 use soroban_sdk::{contract, contractimpl, panic_with_error, token, Address, BytesN, Env};

@@ -39,8 +39,8 @@ fn create_vault(
     balance: i128,
 ) {
     let config = VaultConfig {
-        owner:      owner.clone(),
-        token:      token.clone(),
+        owner: owner.clone(),
+        token: token.clone(),
         created_at: 0,
     };
     let state = VaultState {
@@ -89,6 +89,14 @@ fn test_schedule_payment_success() {
             .unwrap();
         assert_eq!(state.balance, initial_balance - amount);
 
+        // Verify VaultConfig is unmodified after payment scheduling
+        let config: VaultConfig = env
+            .storage()
+            .persistent()
+            .get(&DataKey::VaultConfig(from.clone()))
+            .unwrap();
+        assert_eq!(config.token, token);
+
         // Verify ScheduledPayment stored correctly
         let payment: ScheduledPayment = env
             .storage()
@@ -101,6 +109,37 @@ fn test_schedule_payment_success() {
         assert_eq!(payment.release_at, release_at);
         assert_eq!(payment.executed, false);
     });
+}
+
+#[test]
+fn test_schedule_payment_inactive_vault() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let (contract_id, client, token, _, from, to) = setup_test(&env);
+
+    // Seed vault with is_active: false
+    let config = VaultConfig {
+        owner: Address::generate(&env),
+        token: token.clone(),
+        created_at: 0,
+    };
+    let state = VaultState {
+        balance: 1000,
+        is_active: false,
+    };
+    env.as_contract(&contract_id, || {
+        env.storage()
+            .persistent()
+            .set(&DataKey::VaultConfig(from.clone()), &config);
+        env.storage()
+            .persistent()
+            .set(&DataKey::VaultState(from.clone()), &state);
+    });
+
+    env.ledger().set_timestamp(1000);
+
+    let result = client.try_schedule_payment(&from, &to, &100, &2000);
+    assert_eq!(result, Err(Ok(EscrowError::VaultInactive)));
 }
 
 #[test]

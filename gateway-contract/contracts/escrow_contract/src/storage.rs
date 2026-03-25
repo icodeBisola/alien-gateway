@@ -1,12 +1,22 @@
 use crate::errors::EscrowError;
-use crate::types::{DataKey, ScheduledPayment, VaultConfig, VaultState};
+use crate::types::{DataKey, LegacyVault, ScheduledPayment, VaultConfig, VaultState};
 use soroban_sdk::{BytesN, Env};
 
 /// Reads a vault's immutable configuration from persistent storage.
+///
+/// Checks the new `VaultConfig` key first; if absent, falls back to the legacy `Vault` key and
+/// projects the combined record into a `VaultConfig` for backward compatibility.
 pub fn read_vault_config(env: &Env, commitment: &BytesN<32>) -> Option<VaultConfig> {
-    env.storage()
-        .persistent()
-        .get(&DataKey::VaultConfig(commitment.clone()))
+    let storage = env.storage().persistent();
+    if let Some(config) = storage.get(&DataKey::VaultConfig(commitment.clone())) {
+        return Some(config);
+    }
+    let legacy: LegacyVault = storage.get(&DataKey::Vault(commitment.clone()))?;
+    Some(VaultConfig {
+        owner: legacy.owner,
+        token: legacy.token,
+        created_at: legacy.created_at,
+    })
 }
 
 /// Writes a vault's immutable configuration to persistent storage.
@@ -17,10 +27,19 @@ pub fn write_vault_config(env: &Env, commitment: &BytesN<32>, config: &VaultConf
 }
 
 /// Reads a vault's mutable state from persistent storage.
+///
+/// Checks the new `VaultState` key first; if absent, falls back to the legacy `Vault` key and
+/// projects the combined record into a `VaultState` for backward compatibility.
 pub fn read_vault_state(env: &Env, commitment: &BytesN<32>) -> Option<VaultState> {
-    env.storage()
-        .persistent()
-        .get(&DataKey::VaultState(commitment.clone()))
+    let storage = env.storage().persistent();
+    if let Some(state) = storage.get(&DataKey::VaultState(commitment.clone())) {
+        return Some(state);
+    }
+    let legacy: LegacyVault = storage.get(&DataKey::Vault(commitment.clone()))?;
+    Some(VaultState {
+        balance: legacy.balance,
+        is_active: legacy.is_active,
+    })
 }
 
 /// Writes a vault's mutable state to persistent storage.
