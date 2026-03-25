@@ -113,7 +113,9 @@ fn test_scheduled_payment_roundtrip() {
 
     let stored = env.as_contract(&contract_id, || {
         env.storage().persistent().set(&key, &payment);
-        env.storage().persistent().get::<_, EscrowScheduledPayment>(&key)
+        env.storage()
+            .persistent()
+            .get::<_, EscrowScheduledPayment>(&key)
     });
     assert_eq!(stored, Some(payment));
 }
