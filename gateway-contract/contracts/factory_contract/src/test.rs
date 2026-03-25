@@ -1,10 +1,11 @@
 #![cfg(test)]
 
 use soroban_sdk::testutils::{Address as _, Events as _, MockAuth, MockAuthInvoke};
-use soroban_sdk::{contract, contractimpl, symbol_short, IntoVal, Symbol, TryFromVal, Val, Vec};
+use soroban_sdk::{contract, contractimpl, IntoVal, Symbol, TryFromVal, Val, Vec};
 use soroban_sdk::{Address, BytesN, Env};
 
 use crate::errors::FactoryError;
+use crate::events::USERNAME_DEPLOYED;
 use crate::{FactoryContract, FactoryContractClient};
 
 #[contract]
@@ -64,7 +65,7 @@ fn deploy_username_stores_record_and_emits_event() {
     let (event_hash, event_owner, event_registered_at) =
         <(BytesN<32>, Address, u64)>::try_from_val(&env, &data).unwrap();
 
-    assert_eq!(event_name, symbol_short!("USR_DEP"));
+    assert_eq!(event_name, USERNAME_DEPLOYED);
     assert_eq!(event_hash, hash);
     assert_eq!(event_owner, owner);
     assert_eq!(event_registered_at, record.registered_at);
