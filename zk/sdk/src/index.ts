@@ -1,4 +1,5 @@
 export { MerkleProofGenerator } from "./proof";
+export { UsernameHasher } from "./hasher";
 export { bigintToBytes32, encodeUsername, hashUsername } from "./hash";
 export { UsernameResolver } from "./resolver";
 export type { NetworkConfig, ResolveWithMemoResult } from "./resolver";
