@@ -65,7 +65,7 @@ impl EscrowContract {
         let owner: Option<Address> = env.invoke_contract(
             &registration,
             &Symbol::new(&env, "get_owner"),
-            vec![&env, commitment.clone().into_val(&env)],
+            vec![&env, commitment.into_val(&env)],
         );
         let owner =
             owner.unwrap_or_else(|| panic_with_error!(&env, EscrowError::CommitmentNotRegistered));
