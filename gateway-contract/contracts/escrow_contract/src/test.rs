@@ -8,12 +8,8 @@ use soroban_sdk::testutils::{Address as _, Events as _, Ledger, MockAuth, MockAu
 use soroban_sdk::token::{Client as TokenClient, StellarAssetClient};
 
 use soroban_sdk::{
-    contract, contractimpl, symbol_short, Address, BytesN, Env, Error, IntoVal, Symbol,
-    TryFromVal,
+    contract, contractimpl, Address, BytesN, Env, Error, IntoVal, Symbol, TryFromVal,
 };
-
-use soroban_sdk::{contract, contractimpl, Address, BytesN, Env, Error, IntoVal};
-
 
 // ---------------------------------------------------------------------------
 // Mock Registration contract — exposes get_owner / set_owner for tests.
